@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="fabric:/SF_URLShortener" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+  <Parameters>
+    <Parameter Name="URLShortenerAPI_ASPNETCORE_ENVIRONMENT" Value="Development" />
+    <Parameter Name="URLShortenerAPI_InstanceCount" Value="1" />
+    <Parameter Name="URLShortenerAPI_ENDPOINT_URI" Value="https://localhost:8081/" />
+    <Parameter Name="URLShortenerAPI_PRIMARY_KEY" Value="C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" />
+    <Parameter Name="URLShortenerAPI_DATABASE_ID" Value="URLHashIDDatabase" />
+    <Parameter Name="URLShortenerAPI_CONTAINER_ID_FOR_HASH_ID" Value="HashIDContainer" />
+    <Parameter Name="URLShortenerAPI_CONTAINER_ID_FOR_SEED_VALUE" Value="SeedValueContainer" />
+    <Parameter Name="URLShortenerAPI_SEED_ID" Value="seed" />
+  </Parameters>
+</Application>
