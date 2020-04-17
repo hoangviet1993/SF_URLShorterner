@@ -23,6 +23,11 @@ namespace URLShortenerClient
         public DateTime CreatedTime { get; set; }
     }
 
+    public class ErrorResponse
+    {
+        public string details { get; set; }
+    }
+
     class Program
     {
         static HttpClientHandler handler = new HttpClientHandler()
@@ -38,13 +43,28 @@ namespace URLShortenerClient
                 serializedUrl, UnicodeEncoding.UTF8, "application/json");
             HttpResponseMessage response = await client.PostAsync("api/links", encodedUrl);
             response.EnsureSuccessStatusCode();
-            ShortLink responseObject = null;
+            ShortLink shortLinkResponse = null;
             if (response != null)
             {
                 string responseString = await response.Content.ReadAsStringAsync();
-                responseObject = JsonConvert.DeserializeObject<ShortLink>(responseString);
+                shortLinkResponse = JsonConvert.DeserializeObject<ShortLink>(responseString);
             }
-            return responseObject;
+            return shortLinkResponse;
+        }
+
+        static async Task<ErrorResponse> CreateInvalidUrlPostJson(URLInput url)
+        {
+            string serializedUrl = JsonConvert.SerializeObject(url);
+            StringContent encodedUrl = new StringContent(
+                serializedUrl, UnicodeEncoding.UTF8, "application/json");
+            HttpResponseMessage response = await client.PostAsync("api/links", encodedUrl);
+            ErrorResponse errorResponse = null;
+            if (response != null)
+            {
+                string responseString = await response.Content.ReadAsStringAsync();
+                errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseString);
+            }
+            return errorResponse;
         }
 
         static async Task<ShortLink> CreateShortLinkPostForm(URLInput url)
@@ -54,19 +74,31 @@ namespace URLShortenerClient
             FormUrlEncodedContent encodedForm = new FormUrlEncodedContent(keyValues);
             HttpResponseMessage response = await client.PostAsync("api/links", encodedForm);
             response.EnsureSuccessStatusCode();
-            ShortLink responseObject = null;
+            ShortLink shortLinkResponse = null;
             if (response != null)
             {
                 string responseString = await response.Content.ReadAsStringAsync();
-                responseObject = JsonConvert.DeserializeObject<ShortLink>(responseString);
+                shortLinkResponse = JsonConvert.DeserializeObject<ShortLink>(responseString);
             }
-            return responseObject;
+            return shortLinkResponse;
         }
 
         static async Task<string> GetURLRedirectAsync(string hashID)
         {
             HttpResponseMessage response = await client.GetAsync($"api/links/{hashID}");
             return response.Headers.Location.AbsoluteUri;
+        }
+
+        static async Task<ErrorResponse> GetInvalidHashIDAsync(string hashID)
+        {
+            HttpResponseMessage response = await client.GetAsync($"api/links/{hashID}");
+            ErrorResponse errorResponse = null;
+            if (response != null)
+            {
+                string responseString = await response.Content.ReadAsStringAsync();
+                errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(responseString);
+            }
+            return errorResponse;
         }
 
         static void Main(string[] args)
@@ -84,21 +116,34 @@ namespace URLShortenerClient
                 new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
             try
             {
+                string validUrl = "http://www.google.com";
                 URLInput url = new URLInput
                 {
-                    url = "http://www.google.com"
+                    url = validUrl
                 };
-                ShortLink responseObject;
-                responseObject = await CreateShortLinkPostJsonAsync(url);
-                Console.WriteLine($"Posted Json and received  {JsonConvert.SerializeObject(responseObject)}");
+                ShortLink shortLinkResponse;
+                shortLinkResponse = await CreateShortLinkPostJsonAsync(url);
+                Console.WriteLine($"Posted Json and received  {JsonConvert.SerializeObject(shortLinkResponse)}");
 
-                responseObject = await CreateShortLinkPostForm(url);
-                Console.WriteLine($"Posted Form and received  {JsonConvert.SerializeObject(responseObject)}");
+                shortLinkResponse = await CreateShortLinkPostForm(url);
+                Console.WriteLine($"Posted Form and received  {JsonConvert.SerializeObject(shortLinkResponse)}");
 
-                string hashID = responseObject.HashID;
-                string expectedRedirectUrl = responseObject.Url;
-                object redirectUrl = await GetURLRedirectAsync(hashID);
-                Console.WriteLine($"Get {hashID}, expected {expectedRedirectUrl} and received {redirectUrl}  ");
+                string hashID = shortLinkResponse.HashID;
+                string expectedRedirectUrl = shortLinkResponse.Url;
+                string redirectUrl = await GetURLRedirectAsync(hashID);
+                Console.WriteLine($"Get {hashID}, expected {expectedRedirectUrl} and received {redirectUrl}");
+
+                string invalidHashID = "abc";
+                ErrorResponse errorResponse = await GetInvalidHashIDAsync(invalidHashID);
+                Console.WriteLine($"Get invalid HashID and received {JsonConvert.SerializeObject(errorResponse)}");
+
+                string invalidUrl = "www.google.com";
+                url = new URLInput
+                {
+                    url = invalidUrl
+                };
+                errorResponse = await CreateInvalidUrlPostJson(url);
+                Console.WriteLine($"Posted invalid URL Json and received  {JsonConvert.SerializeObject(errorResponse)}");
             }
             catch (Exception e)
             {
