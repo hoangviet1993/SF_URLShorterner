@@ -14,9 +14,10 @@ namespace URLShortenerAPI
 
         public static void Initialize()
         {
-            // Limit hash to 5 characters.
+            // Limit hash to minimum 5 characters.
             hashIds = new Hashids(SALT_VALUE, MIN_HASH_LENGTH, ALPHABET);
         }
+
         public static string EncodeSeedValue(int seedValue)
         {
             return hashIds.Encode(seedValue);
@@ -24,6 +25,10 @@ namespace URLShortenerAPI
 
         public static int DecodeSeedValue(string hash)
         {
+            if (String.IsNullOrEmpty(hash) || String.IsNullOrWhiteSpace(hash))
+            {
+                throw new ArgumentException("Hash cannot be null, empty or white spaces");
+            }
             int[] decodedValueDigits = hashIds.Decode(hash);
             return JoinDigitArray(decodedValueDigits);
         }
