@@ -27,24 +27,40 @@
 
         public static async Task<Models.ShortLink> GetHashIDItemAsync(string hashID)
         {
+            if (String.IsNullOrEmpty(hashID) || String.IsNullOrWhiteSpace(hashID))
+            {
+                return null;
+            }
             Database database = cosmosClient.GetDatabase(databaseId);
             Container hashIDContainer = database.GetContainer(hashIDContainerID);
             int seedValue = HashIDGenerator.DecodeSeedValue(hashID);
-            ItemResponse<Models.ShortLink> shortLinkResponse = 
-                await hashIDContainer.ReadItemAsync<Models.ShortLink>(seedValue.ToString(), new PartitionKey(seedValue.ToString()));
+            Models.ShortLink shortLinkResponse;
+            try
+            {
+                shortLinkResponse =
+                    await hashIDContainer.ReadItemAsync<Models.ShortLink>(seedValue.ToString(), new PartitionKey(seedValue.ToString()));
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                shortLinkResponse = null;
+            }
             return shortLinkResponse;
         }
 
         public static async Task<Models.ShortLink> CreateHashIDItemIfNotExistsAsync(string url)
         {
+            if (String.IsNullOrEmpty(url) || String.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentException("Input URL cannot be null, empty or whitespaces");
+            }
             Database database = cosmosClient.GetDatabase(databaseId);
             Container hashIDContainer = database.GetContainer(hashIDContainerID);
             int currentSeedValue = await SeedValueDBRepository.GetCurrentSeedValueAsync();
             string hashID = HashIDGenerator.EncodeSeedValue(currentSeedValue);
             Models.ShortLink shortLinkResponse = hashIDContainer.GetItemLinqQueryable<Models.ShortLink>(true)
-                                                                 .Where(shortLink => shortLink.Url == url)
-                                                                 .AsEnumerable()
-                                                                 .FirstOrDefault();
+                                                                .Where(shortLink => shortLink.Url == url)
+                                                                .AsEnumerable()
+                                                                .FirstOrDefault();
             if (shortLinkResponse == null)
             {
                 Models.ShortLink newShortlink = new Models.ShortLink
