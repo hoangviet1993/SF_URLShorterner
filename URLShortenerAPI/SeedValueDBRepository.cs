@@ -39,13 +39,11 @@
             };
             try
             {
-                ItemResponse<Models.SeedValue> seedValueResponse =
-                    await seedValueContainer.ReadItemAsync<Models.SeedValue>(seed.Id, new PartitionKey(seed.Id));
+                await seedValueContainer.ReadItemAsync<Models.SeedValue>(seed.Id, new PartitionKey(seed.Id));
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                ItemResponse<Models.SeedValue> seedValueResponse =
-                    await seedValueContainer.CreateItemAsync(seed, new PartitionKey(seed.Id));
+                await seedValueContainer.CreateItemAsync(seed, new PartitionKey(seed.Id));
             }
         }
 
