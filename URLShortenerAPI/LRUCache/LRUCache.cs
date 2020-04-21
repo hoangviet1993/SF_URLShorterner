@@ -12,7 +12,7 @@ namespace URLShortenerAPI.LRUCache
         public LRUCache(int capacity)
         {
             this.capacity = capacity;
-            this.count = 0;
+            count = 0;
             nodeMap = new Dictionary<string, LRUNode>();
             doubledLinkedList = new LRUDoubleLinkedList();
         }
