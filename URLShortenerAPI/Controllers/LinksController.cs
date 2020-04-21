@@ -15,6 +15,14 @@ namespace URLShortenerAPI.Controllers
     [ApiController]
     public class LinksController : ControllerBase
     {
+        private LRUCache.LRUCache ReadUrlCache;
+
+        public LinksController()
+        {
+            // TODO: Tweak intial capacity according to hardware specs.
+            ReadUrlCache = new LRUCache.LRUCache(10000);
+        }
+
         // GET api/APIReady
         [HttpGet("APIReady")]
         public IActionResult Get()
@@ -28,6 +36,11 @@ namespace URLShortenerAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(string hashID)
         {
+            string redirectUrl = ReadUrlCache.Get(hashID);
+            if (redirectUrl != null)
+            {
+                return Redirect(redirectUrl);
+            }
             Models.ShortLink hashIDItem = await HashIDDBRepository.GetHashIDItemAsync(hashID);
             if (hashIDItem == null)
             {
@@ -58,6 +71,13 @@ namespace URLShortenerAPI.Controllers
                     HashID = hashIDItem.HashID,
                     CreatedTime = hashIDItem.CreatedTime
                 };
+                // Determine if hashID exists in cache. 
+                // Move hashID to front if hashID exists in cache.
+                if (ReadUrlCache.Get(response.HashID) == null)
+                {
+                    // Add new hashID to cache.
+                    ReadUrlCache.Add(response.HashID, response.Url);
+                }
                 return Ok(response);
             }
             else
